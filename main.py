@@ -3,6 +3,7 @@ import sys
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from functions.call_function import call_function
 from functions.get_files_info import schema_get_files_info
 from functions.get_file_content import schema_get_file_content
 from functions.run_python import schema_run_python_file
@@ -29,6 +30,7 @@ When a user asks a question or makes a request, make a function call plan. You c
 - Write or overwrite files
 
 All paths you provide should be relative to the working directory. You do not need to specify the working directory in your function calls as it is automatically injected for security reasons.
+When asked to run a file without optional arguments supplied, just run the file.
 """
 
 def main():
@@ -65,6 +67,12 @@ def main():
         # print(resp.function_calls)
         for fcall in resp.function_calls:
             print(f"Calling function: {fcall.name}({fcall.args})")
+            res = call_function(fcall, verbose=VERBOSE_FLAG_SET)
+            if not res.parts[0].function_response.response:
+                raise Exception('Issue with function call response')
+
+            print(f"-> {res.parts[0].function_response.response}")
+
     else: # just outputting
         print(resp.text)
 

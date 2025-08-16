@@ -3,10 +3,11 @@ from google.genai import types
 
 def get_files_info(working_directory, directory="."):
     full_path = os.path.abspath(os.path.join(working_directory, directory))
+    working_directory_full = os.path.abspath(working_directory)
 
     # print(f'{full_path=}, {working_directory=}')
 
-    if working_directory not in full_path:
+    if working_directory_full not in full_path:
         return f'Error: Cannot list "{directory}" as it is outside the permitted working directory'
     
 

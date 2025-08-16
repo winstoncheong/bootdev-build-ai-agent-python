@@ -4,10 +4,11 @@ import subprocess
 def run_python_file(working_directory, file_path, args=[]):
 
     full_path = os.path.abspath(os.path.join(working_directory, file_path))
+    working_directory_full = os.path.abspath(working_directory)
 
     # print(f'{full_path=}, {working_directory=}')
 
-    if working_directory not in full_path:
+    if working_directory_full not in full_path:
         return f'Error: Cannot execute "{file_path}" as it is outside the permitted working directory'
     
     if not os.path.exists(full_path):
