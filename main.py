@@ -31,6 +31,7 @@ When a user asks a question or makes a request, make a function call plan. You c
 
 All paths you provide should be relative to the working directory. You do not need to specify the working directory in your function calls as it is automatically injected for security reasons.
 When asked to run a file without optional arguments supplied, just run the file.
+Use the available function calls to answer the user's question.
 """
 
 def main():
@@ -46,40 +47,52 @@ def main():
     messages = [
         types.Content(role="user", parts=[types.Part(text=user_prompt)]),
     ]
+    VERBOSE_FLAG_SET = ('--verbose' in sys.argv)
 
     load_dotenv()
     api_key = os.environ.get("GEMINI_API_KEY")
 
     client = genai.Client(api_key=api_key)
-    resp = client.models.generate_content(
-        model='gemini-2.0-flash-001',
-        contents=messages,
-        config=types.GenerateContentConfig(
-            tools=[available_functions],
-            system_instruction=system_prompt,
-        ),
-    )
 
-    VERBOSE_FLAG_SET = ('--verbose' in sys.argv)
+    for _ in range(20):
+        resp = client.models.generate_content(
+            model='gemini-2.0-flash-001',
+            contents=messages,
+            config=types.GenerateContentConfig(
+                tools=[available_functions],
+                system_instruction=system_prompt,
+            ),
+        )
 
-    
-    if resp.function_calls: # wants to execute a function call
-        # print(resp.function_calls)
-        for fcall in resp.function_calls:
-            print(f"Calling function: {fcall.name}({fcall.args})")
-            res = call_function(fcall, verbose=VERBOSE_FLAG_SET)
-            if not res.parts[0].function_response.response:
-                raise Exception('Issue with function call response')
+        # print(resp)
 
-            print(f"-> {res.parts[0].function_response.response}")
+        for candidate in resp.candidates:
+            messages.append(candidate.content)
 
-    else: # just outputting
-        print(resp.text)
+        
+        if resp.function_calls: # wants to execute a function call
+            # print(resp.function_calls)
+            for fcall in resp.function_calls:
+                print(f"Calling function: {fcall.name}({fcall.args})")
+                res = call_function(fcall, verbose=VERBOSE_FLAG_SET)
+                if not res.parts[0].function_response.response:
+                    raise Exception('Issue with function call response')
+                response = res.parts[0].function_response.response
+                print(f"-> {response}")
 
-    if VERBOSE_FLAG_SET:
-        print(f'User prompt: {user_prompt}')
-        print(f'Prompt tokens: {resp.usage_metadata.prompt_token_count}')
-        print(f'Response tokens: {resp.usage_metadata.candidates_token_count}')
+                msg = types.Content(role='user', parts=[types.Part(function_response=res.parts[0].function_response)])
+                messages.append(msg)
+
+        if resp.text:
+            print(resp.text)
+
+        if VERBOSE_FLAG_SET:
+            print(f'User prompt: {user_prompt}')
+            print(f'Prompt tokens: {resp.usage_metadata.prompt_token_count}')
+            print(f'Response tokens: {resp.usage_metadata.candidates_token_count}')
+
+        if resp.text and not resp.function_calls: # no more work to perform.
+            break
 
 
 if __name__ == "__main__":
