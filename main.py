@@ -32,6 +32,10 @@ When a user asks a question or makes a request, make a function call plan. You c
 All paths you provide should be relative to the working directory. You do not need to specify the working directory in your function calls as it is automatically injected for security reasons.
 When asked to run a file without optional arguments supplied, just run the file.
 Use the available function calls to answer the user's question.
+Do not write to main.py.
+
+If the user mentions any bugs, it pertains to the calculator program located at ./calculator/. 
+You should try to fix the specified bugs.
 """
 
 def main():
@@ -69,6 +73,8 @@ def main():
         for candidate in resp.candidates:
             messages.append(candidate.content)
 
+        if resp.text:
+            print(resp.text)
         
         if resp.function_calls: # wants to execute a function call
             # print(resp.function_calls)
@@ -83,8 +89,6 @@ def main():
                 msg = types.Content(role='user', parts=[types.Part(function_response=res.parts[0].function_response)])
                 messages.append(msg)
 
-        if resp.text:
-            print(resp.text)
 
         if VERBOSE_FLAG_SET:
             print(f'User prompt: {user_prompt}')
