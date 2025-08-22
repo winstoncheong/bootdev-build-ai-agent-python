@@ -1,5 +1,6 @@
 import os
 import sys
+from icecream import ic
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -68,7 +69,7 @@ def main():
             ),
         )
 
-        # print(resp)
+        # ic(resp)
 
         for candidate in resp.candidates:
             messages.append(candidate.content)
