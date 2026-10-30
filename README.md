@@ -16,7 +16,7 @@ Why the course switched (July 2026 [Boot.dev Beat](https://www.boot.dev/blog/new
 1. `gemini-2.0-flash-001` was deprecated Feb 2026 and **shut down June 1, 2026** ([Google deprecation schedule](https://ai.google.dev/gemini-api/docs/deprecations)). Free-tier quotas were also cut (1500 → 200 RPD) before that.
 2. Boot.dev moved AI Agent + RAG courses to OpenRouter via the official OpenAI Python SDK: simpler setup, more transferable SDK, rotating pool of free models with more headroom.
 
-Migration status here: `pyproject.toml` / `.venv` updated to Lesson 2 (`openai`, `python-dotenv`). `main.py` and `functions/*` still use the old `google.genai.types` schemas — being ported lesson-by-lesson to OpenAI `chat.completions` + `tools`.
+Migration status: complete through Ch4 L1 — `pyproject.toml`, `main.py`, and all of `functions/*` now use the OpenAI SDK (`chat.completions` + dict tool schemas) via OpenRouter. Dual-provider support (`LLM_PROVIDER=openrouter` default, `opencode-go`/`opencode` via OpenCode Console) lives on top; see `.env.example`.
 
 ## Setup (current course, Lessons 2–3)
 
