@@ -1,65 +1,44 @@
-import os 
+import os
 import subprocess
 
-def run_python_file(working_directory, file_path, args=[]):
 
-    full_path = os.path.abspath(os.path.join(working_directory, file_path))
-    working_directory_full = os.path.abspath(working_directory)
+def run_python_file(
+    working_directory: str, file_path: str, args: list[str] | None = None
+) -> str:
+    try:
+        working_dir_abs = os.path.abspath(working_directory)
+        target_file = os.path.normpath(os.path.join(working_dir_abs, file_path))
 
-    # print(f'{full_path=}, {working_directory=}')
+        if os.path.commonpath([working_dir_abs, target_file]) != working_dir_abs:
+            return f'Error: Cannot execute "{file_path}" as it is outside the permitted working directory'
 
-    if working_directory_full not in full_path:
-        return f'Error: Cannot execute "{file_path}" as it is outside the permitted working directory'
-    
-    if not os.path.exists(full_path):
-        return f'Error: File "{file_path}" not found.'
-    
-    if not file_path.endswith(".py"):
-        return f'Error: "{file_path}" is not a Python file.'
+        if not os.path.isfile(target_file):
+            return f'Error: "{file_path}" does not exist or is not a regular file'
 
-    cmd_lst = ['python', full_path, *args]
+        if not file_path.endswith(".py"):
+            return f'Error: "{file_path}" is not a Python file'
 
-    # print(f'{cmd_lst=}')
+        command = ["python", target_file]
+        if args:
+            command.extend(args)
 
-    comp_proc = subprocess.run(cmd_lst,
-                   timeout=30,
-                   capture_output=True)
-                
-    # print(comp_proc)
+        completed = subprocess.run(
+            command,
+            cwd=working_dir_abs,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
 
-    res = ''
-
-    if comp_proc.stdout:
-        res += f'STDOUT: {comp_proc.stdout}\n' 
-    if comp_proc.stderr:
-        res += f'STDERR: {comp_proc.stderr}\n' 
-
-    if comp_proc.returncode != 0:
-        res += f'Process existed with code {comp_proc.returncode}\n'
-
-    if not res:
-        return "No output produced"
-
-
-    return res
-
-# FunctionDeclaration for Gemini
-from google.genai import types
-schema_run_python_file = types.FunctionDeclaration(
-    name="run_python_file",
-    description="Executes a Python file with optional arguments, constrained to the working directory.",
-    parameters=types.Schema(
-        type=types.Type.OBJECT,
-        properties={
-            "file_path": types.Schema(
-                type=types.Type.STRING,
-                description="The path to the Python file to execute, relative to the working directory.",
-            ),
-            "args": types.Schema(
-                type=types.Type.ARRAY,
-                items=types.Schema(type=types.Type.STRING),
-                description="Optional list of arguments to pass to the Python file.",
-            ),
-        },
-    ),
-)
+        parts = []
+        if completed.stdout:
+            parts.append(f"STDOUT:\n{completed.stdout}")
+        if completed.stderr:
+            parts.append(f"STDERR:\n{completed.stderr}")
+        if completed.returncode != 0:
+            parts.append(f"Process exited with code {completed.returncode}")
+        if not parts:
+            return "No output produced"
+        return "\n".join(parts)
+    except Exception as e:
+        return f"Error: executing Python file: {e}"
