@@ -1,11 +1,54 @@
 import argparse
 import os
 import sys
+import uuid
 from dotenv import load_dotenv
 from openai import OpenAI
 
 from functions.call_function import available_functions, call_function
 from prompts import system_prompt
+
+
+def get_client_and_model():
+    load_dotenv()
+    provider = (os.environ.get("LLM_PROVIDER") or "openrouter").lower().strip()
+
+    if provider == "openrouter":
+        api_key = os.environ.get("OPENROUTER_API_KEY")
+        if not api_key:
+            raise RuntimeError(
+                "OPENROUTER_API_KEY not found. Create one at https://openrouter.ai/keys "
+                "and put it in .env as OPENROUTER_API_KEY='your_key_here'"
+            )
+        base_url = "https://openrouter.ai/api/v1"
+        model = os.environ.get("OPENROUTER_MODEL") or "openrouter/free"
+        extra_headers = None
+    elif provider in ("opencode-go", "opencode_go", "go"):
+        api_key = os.environ.get("OPENCODE_API_KEY")
+        if not api_key:
+            raise RuntimeError(
+                "OPENCODE_API_KEY not found. Copy it from https://opencode.ai/console "
+                "(Go subscription) and put it in .env as OPENCODE_API_KEY='your_key_here'"
+            )
+        base_url = "https://opencode.ai/inference/go/openai/v1"
+        model = os.environ.get("OPENCODE_MODEL") or "muse-spark-1.3-contributor"
+        extra_headers = {"x-opencode-session": f"ses_{uuid.uuid4().hex}"}
+    elif provider == "opencode":
+        api_key = os.environ.get("OPENCODE_API_KEY")
+        if not api_key:
+            raise RuntimeError(
+                "OPENCODE_API_KEY not found. Copy it from https://opencode.ai/console "
+                "and put it in .env as OPENCODE_API_KEY='your_key_here'"
+            )
+        base_url = "https://opencode.ai/inference/openai/v1"
+        model = os.environ.get("OPENCODE_MODEL") or "muse-spark-1.3-contributor"
+        extra_headers = {"x-opencode-session": f"ses_{uuid.uuid4().hex}"}
+    else:
+        raise RuntimeError(
+            f'Unknown LLM_PROVIDER={provider!r}. Use "openrouter", "opencode-go", or "opencode".'
+        )
+
+    return OpenAI(base_url=base_url, api_key=api_key), model, extra_headers
 
 
 def main():
@@ -20,22 +63,14 @@ def main():
     ]
 
     load_dotenv()
-    api_key = os.environ.get("OPENROUTER_API_KEY")
-    if not api_key:
-        raise RuntimeError(
-            "OPENROUTER_API_KEY not found. Create one at https://openrouter.ai/keys "
-            "and put it in .env as OPENROUTER_API_KEY='your_key_here'"
-        )
-
-    client = OpenAI(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=api_key,
-    )
+    client, model, extra_headers = get_client_and_model()
 
     for _ in range(20):
+        kwargs = {"model": model, "messages": messages}
+        if extra_headers:
+            kwargs["extra_headers"] = extra_headers
         response = client.chat.completions.create(
-            model="openrouter/free",
-            messages=messages,
+            **kwargs,
             tools=available_functions,
             temperature=0,
         )
