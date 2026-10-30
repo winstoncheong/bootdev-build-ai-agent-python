@@ -4,20 +4,6 @@ Toy CLI coding agent from Boot.dev's [Build an AI Agent](https://www.boot.dev/le
 
 The calculator app in `./calculator/` is the sandbox project the agent is allowed to inspect and edit.
 
-## Stack migration: Gemini → OpenRouter + OpenAI SDK
-
-This repo started on the old version of the course:
-
-* Old: `google-genai==1.12.1`, model `gemini-2.0-flash-001`, `GEMINI_API_KEY`
-* New: `openai==2.44.0`, model `openrouter/free`, `OPENROUTER_API_KEY`, `base_url="https://openrouter.ai/api/v1"`
-
-Why the course switched (July 2026 [Boot.dev Beat](https://www.boot.dev/blog/news/bootdev-beat-2026-07)):
-
-1. `gemini-2.0-flash-001` was deprecated Feb 2026 and **shut down June 1, 2026** ([Google deprecation schedule](https://ai.google.dev/gemini-api/docs/deprecations)). Free-tier quotas were also cut (1500 → 200 RPD) before that.
-2. Boot.dev moved AI Agent + RAG courses to OpenRouter via the official OpenAI Python SDK: simpler setup, more transferable SDK, rotating pool of free models with more headroom.
-
-Course status: complete through **Ch3 L4** (system prompt, all four tool schemas, single-step tool dispatch). The agentic loop (Ch4) is next. No Gemini-era code remains; see git history for the lesson-by-lesson rebuild.
-
 ## Setup
 
 Requires Python 3.13+, [uv](https://github.com/astral-sh/uv).
@@ -64,3 +50,17 @@ Tools exposed to the model (all constrained to `./calculator` via path validatio
 * `calculator/` — sandbox target app (JSON-render calculator + tests + `lorem.txt` fixture)
 * `test_*.py` — per-lesson manual debug scripts (run directly with `uv run`)
 * `.env.example` — env template (`OPENROUTER_API_KEY`, `OPENROUTER_MODEL`)
+
+## History: Gemini → OpenRouter migration
+
+This repo started on the old version of the course:
+
+* Old: `google-genai==1.12.1`, model `gemini-2.0-flash-001`, `GEMINI_API_KEY`
+* New: `openai==2.44.0`, model `openrouter/free`, `OPENROUTER_API_KEY`, `base_url="https://openrouter.ai/api/v1"`
+
+Why the course switched (July 2026 [Boot.dev Beat](https://www.boot.dev/blog/news/bootdev-beat-2026-07)):
+
+1. `gemini-2.0-flash-001` was deprecated Feb 2026 and **shut down June 1, 2026** ([Google deprecation schedule](https://ai.google.dev/gemini-api/docs/deprecations)). Free-tier quotas were also cut (1500 → 200 RPD) before that.
+2. Boot.dev moved AI Agent + RAG courses to OpenRouter via the official OpenAI Python SDK: simpler setup, more transferable SDK, rotating pool of free models with more headroom.
+
+No Gemini-era code remains; see git history for the lesson-by-lesson rebuild.
