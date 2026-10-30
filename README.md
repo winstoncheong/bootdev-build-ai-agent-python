@@ -22,6 +22,25 @@ OPENROUTER_API_KEY='your_key_here'
 
 Get the key at [openrouter.ai/keys](https://openrouter.ai/keys). Free `:free` models: ~50 req/day, 20/min; a one-time ≥$10 credit purchase raises it to ~1000 req/day. Check usage with `GET /api/v1/key` (`free_model_daily_requests`).
 
+## Providers: OpenRouter vs OpenCode Go
+
+`main.py` supports two providers via `LLM_PROVIDER` (default `openrouter`):
+
+| | OpenRouter (`openrouter`) | OpenCode Go (`opencode-go`) |
+|---|---|---|
+| `.env` | `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` (default `openrouter/free`) | `OPENCODE_API_KEY`, `OPENCODE_MODEL` (default `muse-spark-1.3-contributor`) |
+| Endpoint | `https://openrouter.ai/api/v1` | `https://opencode.ai/inference/go/openai/v1` (+ `x-opencode-session` header) |
+| Quota | 50 free req/day (1,000/day after ≥$10 credit) | Subscription quotas (e.g. ~31k req/mo for `glm-5.3-flash`) |
+| Behavior | Rotating free models; flaky tool-calling, retries often needed | Consistent models; better for the multi-step agent loop |
+
+Switch with one line in `.env` (uncommitted, safe to flip back and forth):
+
+```sh
+LLM_PROVIDER=opencode-go
+```
+
+The course harness only checks behavior, so submits pass on either provider. `openrouter` matches the course text; `opencode-go` is the pragmatic choice once the 50/day runs out (`opencode` pay-as-you-go also works: same vars, `LLM_PROVIDER=opencode`).
+
 Note: the course assumes a Unix shell — on Windows, run everything from WSL (this repo's `.venv` is Windows-only; use a separate Linux venv, e.g. `UV_PROJECT_ENVIRONMENT=~/.venvs/<name>`).
 
 ## Usage
@@ -42,14 +61,14 @@ Tools exposed to the model (all constrained to `./calculator` via path validatio
 
 ## Layout
 
-* `main.py` — arg parsing, OpenRouter client, single-step tool dispatch (`--verbose` flag)
+* `main.py` — arg parsing, OpenAI client, 20-step agent loop (`--verbose` flag); dual-provider (`LLM_PROVIDER`: `openrouter` default, `opencode-go`/`opencode`)
 * `prompts.py` — system prompt (function-call planner instructions)
 * `functions/` — tool implementations + OpenAI dict tool schemas
 * `functions/call_function.py` — `available_functions` list + `call_function()` dispatcher (injects `working_directory="./calculator"`, returns `tool` messages)
 * `config.py` — `MAX_CHARS = 10_000` truncation limit
 * `calculator/` — sandbox target app (JSON-render calculator + tests + `lorem.txt` fixture)
 * `test_*.py` — per-lesson manual debug scripts (run directly with `uv run`)
-* `.env.example` — env template (`OPENROUTER_API_KEY`, `OPENROUTER_MODEL`)
+* `.env.example` — env template (`LLM_PROVIDER`, `OPENROUTER_*`, `OPENCODE_*`)
 
 ## History: Gemini → OpenRouter migration
 
